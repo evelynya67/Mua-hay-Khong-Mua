@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mua Hay Không Mua? — Kiểm tra xu hướng mua học liệu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#17223B;
+    --ink-soft:#3B4664;
+    --paper:#F4F0E6;
+    --paper-raised:#FBF9F3;
+    --teal:#1E6F63;
+    --teal-deep:#134A42;
+    --mustard:#DE9A2E;
+    --coral:#C94F3F;
+    --amber-line:#E3D9C0;
+    --green:#3C8A5A;
+    --yellow:#D9A62E;
+    --red:#C94F3F;
+  }
+  :root:not([data-theme="light"]){}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#F4F0E6; --ink-soft:#CBD2E6; --paper:#151B2C; --paper-raised:#1D2438; --amber-line:#33395A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#F4F0E6; --ink-soft:#CBD2E6; --paper:#151B2C; --paper-raised:#1D2438; --amber-line:#33395A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  h1,h2,h3,.serif{ font-family:'Fraunces', Georgia, serif; letter-spacing:-0.01em; }
+  .lined-bg{
+    background-image: repeating-linear-gradient(to bottom, transparent, transparent 35px, var(--amber-line) 36px);
+    background-position: 0 8px;
+  }
+  ::selection{ background: var(--mustard); color:#17223B; }
+  a{color:inherit;}
+  .tab-btn{
+    position:relative;
+    padding:11px 18px 12px;
+    font-size:14.5px;
+    font-weight:600;
+    border:1px solid var(--amber-line);
+    border-bottom:none;
+    border-radius:10px 10px 0 0;
+    background:var(--paper-raised);
+    color:var(--ink-soft);
+    cursor:pointer;
+    white-space:nowrap;
+    transition:transform .15s ease, color .15s ease;
+    margin-bottom:-1px;
+  }
+  .tab-btn.active{
+    color:var(--ink);
+    background:var(--paper-raised);
+    box-shadow: 0 -2px 0 0 var(--accent, var(--teal)) inset;
+    transform: translateY(-2px);
+  }
+  .tab-btn:hover{ transform: translateY(-2px); }
+  .page{ display:none; }
+  .page.active{ display:block; animation: fadeIn .35s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--amber-line);
+    border-radius:4px;
+  }
+  .btn-primary{
+    background:var(--teal); color:#FBF9F3; border:none; border-radius:3px;
+    padding:13px 26px; font-weight:600; font-size:15px; cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .btn-primary:hover{ background:var(--teal-deep); }
+  .btn-primary:active{ transform: scale(0.98); }
+  .btn-ghost{
+    background:transparent; color:var(--ink); border:1.5px solid var(--ink);
+    border-radius:3px; padding:11px 24px; font-weight:600; font-size:15px; cursor:pointer;
+  }
+  .btn-ghost:hover{ background:var(--ink); color:var(--paper); }
+  input[type=text], input[type=number], select, textarea{
+    width:100%; padding:11px 13px; border:1.5px solid var(--amber-line); border-radius:3px;
+    background:var(--paper); color:var(--ink); font-family:inherit; font-size:15px;
+  }
+  input:focus, select:focus, textarea:focus, button:focus-visible, .tab-btn:focus-visible{
+    outline:2px solid var(--teal); outline-offset:2px;
+  }
+  .likert{ display:flex; gap:6px; flex-wrap:wrap; }
+  .likert label{
+    flex:1; min-width:64px; text-align:center; padding:10px 6px; border:1.5px solid var(--amber-line);
+    border-radius:3px; cursor:pointer; font-size:13px; font-weight:600; color:var(--ink-soft);
+    transition: all .12s ease;
+  }
+  .likert input{ position:absolute; opacity:0; pointer-events:none; }
+  .likert input:checked + label, .likert label.checked{
+    background:var(--teal); border-color:var(--teal); color:#FBF9F3;
+  }
+  .badge{ display:inline-block; padding:4px 11px; border-radius:20px; font-size:12.5px; font-weight:700; }
+  .progress-track{ height:6px; background:var(--amber-line); border-radius:4px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--teal); transition:width .3s ease; }
+  .scroll-tabs{ overflow-x:auto; scrollbar-width:thin; }
+  .scroll-tabs::-webkit-scrollbar{ height:5px; }
+  .scroll-tabs::-webkit-scrollbar-thumb{ background:var(--amber-line); border-radius:4px; }
+  .accordion-head{ cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+  .accordion-body{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  .accordion-body.open{ max-height:600px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:20px;
+    border:1.5px solid var(--amber-line); font-size:13.5px; font-weight:600; cursor:pointer;
+    background:var(--paper);
+  }
+  .chip.selected{ background:var(--mustard); border-color:var(--mustard); color:#17223B; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th,td{ text-align:left; padding:9px 8px; border-bottom:1px solid var(--amber-line); }
+  th{ font-weight:700; color:var(--ink-soft); font-size:12.5px; text-transform:none; }
+  ::placeholder{ color:var(--ink-soft); opacity:.55; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
+  }
+  .skeleton{ background:linear-gradient(90deg, var(--amber-line) 25%, var(--paper) 37%, var(--amber-line) 63%); background-size:400% 100%; animation:shimmer 1.4s ease infinite; border-radius:4px; }
+  @keyframes shimmer{ 0%{background-position:100% 0;} 100%{background-position:0 0;} }
+  .tag{ display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:rgba(30,111,99,.14); color:var(--teal); margin-right:6px; }
+  .tag.coral{ background:rgba(201,79,63,.14); color:var(--coral); }
+  .tag.mustard{ background:rgba(222,154,46,.18); color:#9C6A0E; }
+  .src-link{ font-size:12px; color:var(--teal); text-decoration:none; border-bottom:1px dotted var(--teal); }
+  .src-link:hover{ opacity:.7; }
+  .filter-bar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .video-card{ display:flex; gap:14px; padding:16px; align-items:flex-start; }
+  .video-thumb{ width:52px; height:52px; border-radius:10px; background:var(--coral); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; }
+</style>
+</head>
+<body>
+
+<div id="app" style="max-width:1080px; margin:0 auto; padding:22px 18px 80px;">
+
+  <!-- HEADER -->
+  <header style="display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:22px; flex-wrap:wrap;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:42px;height:42px;border-radius:9px;background:var(--teal);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-size:20px;">📘</span>
+      </div>
+      <div>
+        <div class="serif" style="font-size:19px; font-weight:700; line-height:1.1;">Mua Hay Không Mua?</div>
+        <div style="font-size:12px; color:var(--ink-soft);">Công cụ hỗ trợ HS lớp 12 ra quyết định mua học liệu</div>
+      </div>
+    </div>
+    <div style="font-size:12px; color:var(--ink-soft); text-align:right;">
+      Đề tài NCKH · Dữ liệu khảo sát 250 HS THPT tại TP.HCM
+    </div>
+  </header>
+
+  <!-- NAV -->
+  <nav class="scroll-tabs" style="display:flex; gap:6px; border-bottom:1.5px solid var(--amber-line); margin-bottom:26px;">
+    <button class="tab-btn active" data-page="home" data-accent="var(--teal)">🏠 Trang chủ</button>
+    <button class="tab-btn" data-page="quiz" data-accent="var(--coral)">🧠 Quiz Panic Index</button>
+    <button class="tab-btn" data-page="dashboard" data-accent="var(--mustard)">📊 Dashboard</button>
+    <button class="tab-btn" data-page="tracker" data-accent="var(--teal)">📚 Theo dõi học liệu</button>
+    <button class="tab-btn" data-page="planner" data-accent="var(--coral)">📝 Lập kế hoạch</button>
+    <button class="tab-btn" data-page="library" data-accent="var(--mustard)">📖 Thư viện</button>
+    <button class="tab-btn" data-page="videos" data-accent="var(--coral)">🎥 Video học tập</button>
+    <button class="tab-btn" data-page="materials" data-accent="var(--teal)">📚 Database tài liệu</button>
+    <button class="tab-btn" data-page="community" data-accent="var(--mustard)">📈 Dữ liệu cộng đồng</button>
+  </nav>
+
+  <!-- ============ HOME ============ -->
+  <section class="page active" id="page-home">
+    <div class="card lined-bg" style="padding:38px 30px; margin-bottom:22px;">
+      <div style="max-width:640px;">
+        <span class="badge" style="background:var(--mustard); color:#17223B;">Trước mùa thi</span>
+        <h1 class="serif" style="font-size:clamp(28px,4vw,40px); font-weight:600; line-height:1.15; margin:14px 0 12px;">
+          Bạn mua học liệu vì <em style="font-style:italic;">cần</em>, hay vì <em style="font-style:italic;">sợ bị bỏ lại phía sau</em>?
+        </h1>
+        <p style="font-size:15.5px; color:var(--ink-soft); line-height:1.65; margin-bottom:22px;">
+          Càng gần kỳ thi, các nhóm học tập càng tràn ngập lời rủ mua sách, đề thi thử, khóa học "hot". Web app này giúp bạn dừng lại vài phút,
+          nhìn rõ xu hướng chi tiêu của chính mình, và lập một kế hoạch học liệu vừa đủ — không thiếu, không hoảng.
+        </p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn-primary" onclick="goPage('quiz')">Làm quiz 15 câu (3 phút) →</button>
+          <button class="btn-ghost" onclick="goPage('planner')">Lập kế hoạch học liệu</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-bottom:22px;">
+      <div class="card" style="padding:20px;">
+        <div class="serif" style="font-size:30px; font-weight:700; color:var(--teal);">72,8%</div>
+        <div style="font-size:13.5px; color:var(--ink-soft); margin-top:4px;">học sinh khảo sát cho biết "rất muốn" hoặc "có thể" sử dụng một công cụ miễn phí như thế này để hỗ trợ quyết định mua học liệu.</div>
+      </div>
+      <div class="card" style="padding:20px;">
+        <div class="serif" style="font-size:30px; font-weight:700; color:var(--coral);">105 lượt</div>
+        <div style="font-size:13.5px; color:var(--ink-soft); margin-top:4px;">chọn "theo dõi số tài liệu đã mua và đã sử dụng" — chức năng được mong muốn nhiều nhất trong khảo sát.</div>
+      </div>
+      <div class="card" style="padding:20px;">
+        <div class="serif" style="font-size:30px; font-weight:700; color:var(--mustard);">250 HS</div>
+        <div style="font-size:13.5px; color:var(--ink-soft); margin-top:4px;">lớp 12 tại TP.HCM đã tham gia khảo sát làm cơ sở xây dựng bộ câu hỏi và tính năng của app.</div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:24px;">
+      <h2 class="serif" style="font-size:20px; font-weight:600; margin-bottom:14px;">App gồm những gì?</h2>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px;">
+        <div style="display:flex; gap:12px;">
+          <div style="font-size:22px;">🧠</div>
+          <div><b style="font-size:14.5px;">Quiz Panic Index</b><div style="font-size:13px; color:var(--ink-soft); margin-top:2px;">15 câu, cho điểm 3 nhóm: Lo âu, FOMO, Chi tiêu bốc đồng.</div></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="font-size:22px;">📊</div>
+          <div><b style="font-size:14.5px;">Dashboard cá nhân</b><div style="font-size:13px; color:var(--ink-soft); margin-top:2px;">So sánh điểm của bạn với mức trung bình khảo sát.</div></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="font-size:22px;">📚</div>
+          <div><b style="font-size:14.5px;">Theo dõi học liệu</b><div style="font-size:13px; color:var(--ink-soft); margin-top:2px;">Ghi lại tài liệu đã mua, đánh dấu đã dùng / chưa dùng.</div></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="font-size:22px;">📝</div>
+          <div><b style="font-size:14.5px;">Lập kế hoạch học liệu</b><div style="font-size:13px; color:var(--ink-soft); margin-top:2px;">Gợi ý danh sách tối thiểu theo môn + ước tính ngân sách.</div></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="font-size:22px;">📖</div>
+          <div><b style="font-size:14.5px;">Thư viện kiến thức</b><div style="font-size:13px; color:var(--ink-soft); margin-top:2px;">Bài ngắn dễ hiểu về FOMO, sunk cost, dấu hiệu panic buying.</div></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="font-size:22px;">🎥</div>
+          <div><b style="font-size:14.5px;">Video học tập</b><div style="font-size:13px; color:var(--ink-soft); margin-top:2px;">Kênh YouTube thầy cô uy tín theo từng môn để tự học miễn phí.</div></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="font-size:22px;">📚</div>
+          <div><b style="font-size:14.5px;">Database học liệu</b><div style="font-size:13px; color:var(--ink-soft); margin-top:2px;">Thông tin khách quan về sách/tài liệu ôn thi — không khuyên mua hay không.</div></div>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="font-size:22px;">📈</div>
+          <div><b style="font-size:14.5px;">Dữ liệu cộng đồng</b><div style="font-size:13px; color:var(--ink-soft); margin-top:2px;">Biểu đồ ẩn danh tổng hợp từ khảo sát 250 HS TP.HCM.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="page" id="page-quiz">
+    <div id="quiz-intro" class="card" style="padding:30px;">
+      <h2 class="serif" style="font-size:24px; font-weight:600; margin-bottom:8px;">Bạn có đang panic buying học liệu không?</h2>
+      <p style="font-size:14.5px; color:var(--ink-soft); line-height:1.6; margin-bottom:18px; max-width:600px;">
+        15 câu hỏi bên dưới được rút gọn từ bộ khảo sát nghiên cứu, chia làm 3 nhóm: <b>Lo âu thi cử</b>, <b>FOMO (sợ bỏ lỡ)</b> và
+        <b>Chi tiêu bốc đồng</b>. Trả lời thật với cảm nhận của bạn trong 2–3 tuần gần đây — không có đáp án đúng/sai.
+      </p>
+      <button class="btn-primary" onclick="startQuiz()">Bắt đầu làm quiz</button>
+    </div>
+
+    <div id="quiz-body" style="display:none;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px;">
+        <div class="progress-track" style="flex:1;"><div class="progress-fill" id="quiz-progress" style="width:0%;"></div></div>
+        <span id="quiz-count" style="font-size:13px; color:var(--ink-soft); white-space:nowrap;">Câu 1/15</span>
+      </div>
+      <div class="card" style="padding:28px;">
+        <div style="font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--teal); margin-bottom:10px;" id="quiz-group-label">LO ÂU THI CỬ</div>
+        <div class="serif" id="quiz-question" style="font-size:19px; font-weight:500; line-height:1.4; margin-bottom:22px;">—</div>
+        <div class="likert" id="quiz-options"></div>
+        <div style="display:flex; justify-content:space-between; margin-top:26px;">
+          <button class="btn-ghost" id="quiz-back" onclick="quizBack()" style="padding:9px 18px;">← Câu trước</button>
+          <span style="font-size:12.5px; color:var(--ink-soft); align-self:center;">Chọn một mức để tự động chuyển câu tiếp theo</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="quiz-result" style="display:none;"></div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="page" id="page-dashboard">
+    <div id="dash-empty" class="card" style="padding:34px; text-align:center;">
+      <div style="font-size:34px; margin-bottom:10px;">📊</div>
+      <h2 class="serif" style="font-size:20px; font-weight:600; margin-bottom:8px;">Chưa có dữ liệu để hiển thị</h2>
+      <p style="font-size:14px; color:var(--ink-soft); margin-bottom:18px;">Hãy làm quiz Panic Index trước để dashboard có dữ liệu vẽ biểu đồ cho bạn.</p>
+      <button class="btn-primary" onclick="goPage('quiz')">Làm quiz ngay</button>
+    </div>
+    <div id="dash-content" style="display:none;">
+      <div style="display:grid; grid-template-columns:1.1fr .9fr; gap:16px; margin-bottom:16px;" id="dash-grid">
+        <div class="card" style="padding:22px;">
+          <h3 class="serif" style="font-size:16.5px; font-weight:600; margin-bottom:14px;">Lo âu × FOMO × Chi tiêu bốc đồng</h3>
+          <canvas id="chart-radar" height="230"></canvas>
+        </div>
+        <div class="card" style="padding:22px; display:flex; flex-direction:column;">
+          <h3 class="serif" style="font-size:16.5px; font-weight:600; margin-bottom:6px;">Panic Index của bạn</h3>
+          <div id="dash-score-block" style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:10px 0;"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:22px; margin-bottom:16px;">
+        <h3 class="serif" style="font-size:16.5px; font-weight:600; margin-bottom:4px;">So với trung bình 250 học sinh khảo sát</h3>
+        <p style="font-size:12.5px; color:var(--ink-soft); margin-bottom:14px;">Mức trung bình ước tính từ dữ liệu khảo sát nghiên cứu (thang 0–100 theo từng nhóm).</p>
+        <canvas id="chart-compare" height="110"></canvas>
+      </div>
+      <div class="card" style="padding:22px;">
+        <h3 class="serif" style="font-size:16.5px; font-weight:600; margin-bottom:4px;">Lịch sử làm quiz</h3>
+        <p style="font-size:12.5px; color:var(--ink-soft); margin-bottom:14px;">Làm lại quiz theo thời gian để theo dõi Panic Index của bạn thay đổi ra sao khi kỳ thi đến gần.</p>
+        <canvas id="chart-history" height="110"></canvas>
+        <div style="text-align:right; margin-top:14px;">
+          <button class="btn-ghost" style="padding:8px 16px; font-size:13px;" onclick="goPage('quiz')">Làm lại quiz</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRACKER ============ -->
+  <section class="page" id="page-tracker">
+    <div class="card" style="padding:24px; margin-bottom:16px;">
+      <h2 class="serif" style="font-size:20px; font-weight:600; margin-bottom:4px;">Theo dõi học liệu đã mua</h2>
+      <p style="font-size:13.5px; color:var(--ink-soft); margin-bottom:18px;">Chức năng được học sinh mong muốn nhiều nhất trong khảo sát (105 lượt chọn). Ghi lại mỗi món học liệu bạn mua và đánh dấu khi đã dùng — nhìn lại tỉ lệ sử dụng để cân nhắc lần mua tiếp theo.</p>
+      <div style="background:var(--paper); border:1.5px dashed var(--amber-line); border-radius:4px; padding:14px 16px; margin-bottom:18px; font-size:13px; color:var(--ink-soft); display:flex; gap:10px;">
+        <span>💡</span>
+        <span>Trước khi thêm món mới, hãy tự hỏi: <i>mình đã dùng hết tài liệu hiện có chưa? món này có trùng với thứ mình đã có không?</i></span>
+      </div>
+      <div style="display:grid; grid-template-columns:1.4fr 1fr .8fr auto; gap:10px; align-items:end;" id="tracker-form">
+        <div>
+          <label style="font-size:12.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:5px;">Tên học liệu</label>
+          <input type="text" id="t-name" placeholder="VD: Sách bài tập Toán trắc nghiệm">
+        </div>
+        <div>
+          <label style="font-size:12.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:5px;">Môn</label>
+          <select id="t-subject"></select>
+        </div>
+        <div>
+          <label style="font-size:12.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:5px;">Giá (VNĐ)</label>
+          <input type="number" id="t-cost" placeholder="90000">
+        </div>
+        <button class="btn-primary" style="padding:11px 20px;" onclick="addTrackerItem()">+ Thêm</button>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px;" id="tracker-stats"></div>
+
+    <div class="card" style="padding:22px;">
+      <table id="tracker-table">
+        <thead><tr><th>Học liệu</th><th>Môn</th><th>Giá</th><th>Trạng thái</th><th></th></tr></thead>
+        <tbody id="tracker-tbody"></tbody>
+      </table>
+      <div id="tracker-empty" style="text-align:center; padding:30px 10px; color:var(--ink-soft); font-size:13.5px;">Chưa có học liệu nào được thêm.</div>
+    </div>
+  </section>
+
+  <!-- ============ PLANNER ============ -->
+  <section class="page" id="page-planner">
+    <div class="card" style="padding:24px; margin-bottom:16px;">
+      <h2 class="serif" style="font-size:20px; font-weight:600; margin-bottom:4px;">Lập kế hoạch học liệu</h2>
+      <p style="font-size:13.5px; color:var(--ink-soft); margin-bottom:20px;">Chọn môn thi và thời gian ôn tập, app sẽ gợi ý danh sách học liệu <b>tối thiểu cần thiết</b> và giúp bạn ước tính ngân sách hợp lý — thay vì mua theo cảm tính.</p>
+
+      <label style="font-size:12.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:8px;">Môn thi (chọn 1 hoặc nhiều môn)</label>
+      <div id="planner-subjects" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;"></div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+        <div>
+          <label style="font-size:12.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:6px;">Số tuần ôn tập còn lại</label>
+          <input type="number" id="p-weeks" placeholder="VD: 12" min="1">
+        </div>
+        <div>
+          <label style="font-size:12.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:6px;">Ngân sách bạn dự tính (VNĐ)</label>
+          <input type="number" id="p-budget" placeholder="VD: 500000">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="generatePlan()">Gợi ý kế hoạch</button>
+    </div>
+
+    <div id="plan-result"></div>
+  </section>
+
+  <!-- ============ LIBRARY ============ -->
+  <section class="page" id="page-library">
+    <h2 class="serif" style="font-size:22px; font-weight:600; margin-bottom:16px;">Thư viện kiến thức ngắn</h2>
+    <div id="library-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+  </section>
+
+  <!-- ============ VIDEOS ============ -->
+  <section class="page" id="page-videos">
+    <div class="card" style="padding:24px; margin-bottom:16px;">
+      <h2 class="serif" style="font-size:20px; font-weight:600; margin-bottom:4px;">Video học tập theo môn</h2>
+      <p style="font-size:13.5px; color:var(--ink-soft);">Danh sách thầy cô / kênh được nhiều học sinh và báo chí trong nước nhắc đến khi tự học tại nhà. App chỉ cung cấp thông tin để bạn tự tham khảo và chọn kênh hợp với cách học của mình — không xếp hạng "hay nhất".</p>
+    </div>
+    <div class="filter-bar" id="video-filters"></div>
+    <div id="videos-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+    <p style="font-size:11.5px; color:var(--ink-soft); margin-top:18px;">Thông tin kênh được tổng hợp từ báo chí và trang giới thiệu công khai của giáo viên (tính đến 2026), có thể thay đổi theo thời gian — hãy kiểm tra lại trên YouTube trước khi theo học lâu dài.</p>
+  </section>
+
+  <!-- ============ MATERIALS DATABASE ============ -->
+  <section class="page" id="page-materials">
+    <div class="card" style="padding:24px; margin-bottom:16px;">
+      <h2 class="serif" style="font-size:20px; font-weight:600; margin-bottom:4px;">Database học liệu ôn thi</h2>
+      <p style="font-size:13.5px; color:var(--ink-soft);">Tổng hợp thông tin khách quan về các đầu sách/tài liệu luyện thi tốt nghiệp THPT và Đánh giá năng lực (ĐGNL) đang được biết đến rộng rãi. App chỉ mô tả <b>nội dung, cấu trúc và nhận xét chung được tổng hợp từ các nguồn công khai</b> — không khuyên bạn nên mua hay không mua. Quyết định vẫn là của bạn.</p>
+    </div>
+    <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+      <input type="text" id="mat-search" placeholder="Tìm theo tên sách, môn, NXB..." style="max-width:320px;">
+      <select id="mat-filter-exam" style="max-width:200px;">
+        <option value="">Tất cả kỳ thi</option>
+        <option value="THPT">Tốt nghiệp THPT</option>
+        <option value="ĐGNL">Đánh giá năng lực</option>
+      </select>
+      <select id="mat-filter-subject" style="max-width:200px;"></select>
+    </div>
+    <div id="materials-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+    <div id="materials-empty" style="display:none; text-align:center; padding:30px; color:var(--ink-soft); font-size:13.5px;">Không tìm thấy học liệu phù hợp với bộ lọc.</div>
+  </section>
+
+  <!-- ============ COMMUNITY ============ -->
+  <section class="page" id="page-community">
+    <div class="card" style="padding:24px; margin-bottom:16px;">
+      <h2 class="serif" style="font-size:20px; font-weight:600; margin-bottom:4px;">Dữ liệu cộng đồng (ẩn danh)</h2>
+      <p style="font-size:13.5px; color:var(--ink-soft);">Tổng hợp từ khảo sát 250 học sinh lớp 12 tại TP.HCM — dùng làm dữ liệu bổ sung cho đề tài nghiên cứu. Không có thông tin định danh cá nhân.</p>
+    </div>
+
+    <div class="card" style="padding:22px; margin-bottom:16px;">
+      <h3 class="serif" style="font-size:16.5px; font-weight:600; margin-bottom:4px;">Mức độ sẵn sàng sử dụng công cụ hỗ trợ miễn phí</h3>
+      <p style="font-size:12.5px; color:var(--ink-soft); margin-bottom:14px;">n = 250 học sinh · 72,8% chọn "rất muốn" hoặc "có thể sử dụng"</p>
+      <canvas id="chart-willing" height="150"></canvas>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <div class="card" style="padding:22px;">
+        <h3 class="serif" style="font-size:15.5px; font-weight:600; margin-bottom:4px;">Chức năng mong muốn nhiều nhất</h3>
+        <p style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Học sinh có thể chọn nhiều đáp án</p>
+        <canvas id="chart-features" height="190"></canvas>
+      </div>
+      <div class="card" style="padding:22px;">
+        <h3 class="serif" style="font-size:15.5px; font-weight:600; margin-bottom:4px;">Giải pháp được lựa chọn nhiều nhất</h3>
+        <p style="font-size:12px; color:var(--ink-soft); margin-bottom:14px;">Học sinh có thể chọn nhiều đáp án</p>
+        <canvas id="chart-solutions" height="190"></canvas>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================ NAV ============================ */
+function goPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    const active = b.dataset.page === name;
+    b.classList.toggle('active', active);
+    b.style.setProperty('--accent', active ? b.dataset.accent : '');
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+  if(name==='dashboard') renderDashboard();
+  if(name==='videos' && !window.__videosRendered){ renderVideos(); window.__videosRendered = true; }
+  if(name==='materials' && !window.__materialsRendered){ renderMaterials(); window.__materialsRendered = true; }
+  if(name==='community' && !window.__communityRendered){ renderCommunityCharts(); window.__communityRendered = true; }
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>goPage(btn.dataset.page));
+});
+
+/* ============================ STORAGE HELPERS ============================ */
+function safeGet(key, fallback){
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch(e){ return fallback; }
+}
+function safeSet(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+}
+
+/* ============================ QUIZ ============================ */
+const QUESTIONS = [
+  {g:'anxiety', label:'LO ÂU THI CỬ', text:'Tôi cảm thấy lo lắng khi nghĩ đến kỳ thi sắp tới.'},
+  {g:'anxiety', label:'LO ÂU THI CỬ', text:'Tôi mất ngủ hoặc khó tập trung vì áp lực thi cử.'},
+  {g:'anxiety', label:'LO ÂU THI CỬ', text:'Tôi cảm thấy mình chưa chuẩn bị đủ dù đã học khá nhiều.'},
+  {g:'anxiety', label:'LO ÂU THI CỬ', text:'Tôi hay so sánh mức độ chuẩn bị của mình với bạn bè.'},
+  {g:'anxiety', label:'LO ÂU THI CỬ', text:'Tôi cảm thấy căng thẳng mỗi khi thấy người khác bàn về tài liệu ôn thi.'},
+  {g:'fomo', label:'FOMO — SỢ BỎ LỠ', text:'Tôi sợ bỏ lỡ tài liệu "hot" mà nhiều bạn đang dùng.'},
+  {g:'fomo', label:'FOMO — SỢ BỎ LỠ', text:'Khi thấy quảng cáo sách luyện thi, tôi thấy nôn nao muốn mua ngay.'},
+  {g:'fomo', label:'FOMO — SỢ BỎ LỠ', text:'Tôi theo dõi các hội nhóm học tập để không bỏ lỡ tài liệu mới.'},
+  {g:'fomo', label:'FOMO — SỢ BỎ LỠ', text:'Tôi nghĩ nếu không mua tài liệu giống các bạn, mình sẽ bị tụt lại phía sau.'},
+  {g:'fomo', label:'FOMO — SỢ BỎ LỠ', text:'Tôi cảm thấy an tâm hơn khi sở hữu nhiều loại tài liệu, kể cả khi chưa chắc sẽ dùng hết.'},
+  {g:'spend', label:'CHI TIÊU BỐC ĐỒNG', text:'Tôi từng mua tài liệu ngay khi thấy mà không suy nghĩ kỹ.'},
+  {g:'spend', label:'CHI TIÊU BỐC ĐỒNG', text:'Tôi có những cuốn sách/tài liệu đã mua nhưng chưa từng mở ra dùng.'},
+  {g:'spend', label:'CHI TIÊU BỐC ĐỒNG', text:'Tôi thường mua thêm tài liệu dù đã có tài liệu tương tự ở nhà.'},
+  {g:'spend', label:'CHI TIÊU BỐC ĐỒNG', text:'Tôi khó kiềm chế việc mua sắm học liệu khi đang căng thẳng.'},
+  {g:'spend', label:'CHI TIÊU BỐC ĐỒNG', text:'Sau khi mua tài liệu, tôi thường cảm thấy hối hận hoặc tốn kém hơn dự tính.'},
+];
+const LIKERT = ['Hoàn toàn không đồng ý','Không đồng ý','Bình thường','Đồng ý','Hoàn toàn đồng ý'];
+let quizAnswers = [];
+let quizIdx = 0;
+
+function startQuiz(){
+  quizAnswers = new Array(QUESTIONS.length).fill(null);
+  quizIdx = 0;
+  document.getElementById('quiz-intro').style.display='none';
+  document.getElementById('quiz-result').style.display='none';
+  document.getElementById('quiz-body').style.display='block';
+  renderQuestion();
+}
+function renderQuestion(){
+  const q = QUESTIONS[quizIdx];
+  document.getElementById('quiz-group-label').textContent = q.label;
+  document.getElementById('quiz-question').textContent = q.text;
+  document.getElementById('quiz-count').textContent = `Câu ${quizIdx+1}/${QUESTIONS.length}`;
+  document.getElementById('quiz-progress').style.width = ((quizIdx)/QUESTIONS.length*100)+'%';
+  document.getElementById('quiz-back').style.visibility = quizIdx===0 ? 'hidden' : 'visible';
+
+  const opts = document.getElementById('quiz-options');
+  opts.innerHTML='';
+  LIKERT.forEach((label, i)=>{
+    const val = i+1;
+    const id = `opt-${quizIdx}-${val}`;
+    const wrap = document.createElement('div');
+    wrap.style.position='relative'; wrap.style.flex='1'; wrap.style.minWidth='64px';
+    wrap.innerHTML = `<input type="radio" name="q${quizIdx}" id="${id}" value="${val}">
+      <label for="${id}" class="${quizAnswers[quizIdx]===val?'checked':''}">${val}<br><span style="font-weight:400; font-size:10.5px;">${label}</span></label>`;
+    opts.appendChild(wrap);
+    wrap.querySelector('input').addEventListener('change', ()=>{
+      quizAnswers[quizIdx]=val;
+      setTimeout(()=> quizIdx < QUESTIONS.length-1 ? (quizIdx++, renderQuestion()) : finishQuiz(), 220);
+    });
+  });
+}
+function quizBack(){
+  if(quizIdx>0){ quizIdx--; renderQuestion(); }
+}
+function finishQuiz(){
+  const groups = {anxiety:[], fomo:[], spend:[]};
+  QUESTIONS.forEach((q,i)=> groups[q.g].push(quizAnswers[i]));
+  const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+  const toScore100 = v => Math.round(((v-1)/4)*100);
+  const scores = {
+    anxiety: toScore100(avg(groups.anxiety)),
+    fomo: toScore100(avg(groups.fomo)),
+    spend: toScore100(avg(groups.spend)),
+  };
+  const panicIndex = Math.round((scores.anxiety+scores.fomo+scores.spend)/3);
+
+  let level;
+  if(panicIndex < 40) level = {name:'Mua có kế hoạch', emoji:'🟢', color:'var(--green)'};
+  else if(panicIndex < 70) level = {name:'Có dấu hiệu mua bốc đồng', emoji:'🟡', color:'var(--yellow)'};
+  else level = {name:'Panic buying rõ ràng', emoji:'🔴', color:'var(--red)'};
+
+  const history = safeGet('mhkm_history', []);
+  history.push({date:new Date().toISOString(), panicIndex, scores});
+  safeSet('mhkm_history', history);
+  safeSet('mhkm_latest', {panicIndex, scores, level});
+
+  document.getElementById('quiz-body').style.display='none';
+  const resultEl = document.getElementById('quiz-result');
+  resultEl.style.display='block';
+  resultEl.innerHTML = `
+    <div class="card" style="padding:32px; text-align:center;">
+      <div style="font-size:40px; margin-bottom:6px;">${level.emoji}</div>
+      <div style="font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:${level.color};">Kết quả của bạn</div>
+      <h2 class="serif" style="font-size:26px; font-weight:600; margin:8px 0 4px;">${level.name}</h2>
+      <div class="serif" style="font-size:48px; font-weight:700; margin:10px 0;">${panicIndex}<span style="font-size:18px; color:var(--ink-soft); font-weight:400;">/100 Panic Index</span></div>
+      <p style="font-size:14px; color:var(--ink-soft); max-width:480px; margin:6px auto 22px; line-height:1.6;">${levelAdvice(level.name)}</p>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:500px; margin:0 auto 26px;">
+        ${scoreChip('Lo âu', scores.anxiety)}
+        ${scoreChip('FOMO', scores.fomo)}
+        ${scoreChip('Chi tiêu bốc đồng', scores.spend)}
+      </div>
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn-primary" onclick="goPage('dashboard')">Xem Dashboard chi tiết →</button>
+        <button class="btn-ghost" onclick="goPage('planner')">Lập kế hoạch học liệu</button>
+      </div>
+    </div>`;
+}
+function scoreChip(label, val){
+  return `<div class="card" style="padding:14px; background:var(--paper);">
+    <div style="font-size:22px; font-weight:700;" class="serif">${val}</div>
+    <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">${label}</div>
+  </div>`;
+}
+function levelAdvice(name){
+  if(name==='Mua có kế hoạch') return 'Bạn đang kiểm soát tốt việc mua học liệu. Cứ tiếp tục lên danh sách trước khi mua và bạn sẽ ôn thi nhẹ nhàng hơn nhiều bạn khác.';
+  if(name==='Có dấu hiệu mua bốc đồng') return 'Thỉnh thoảng bạn mua theo cảm xúc hơn là nhu cầu thực tế. Thử dùng công cụ Lập kế hoạch để biết mình thật sự cần gì trước khi mua thêm.';
+  return 'Điểm của bạn cho thấy việc mua học liệu đang bị chi phối nhiều bởi lo âu và sợ bỏ lỡ. Hãy dùng công cụ Theo dõi học liệu để nhìn lại những gì đã mua, và cân nhắc trao đổi với phụ huynh hoặc thầy cô trước khi mua thêm.';
+}
+
+/* ============================ DASHBOARD ============================ */
+let radarChart, compareChart, historyChart;
+const SURVEY_AVG = { anxiety: 62, fomo: 54, spend: 47 }; // ước tính từ khảo sát nghiên cứu, dùng làm mốc so sánh demo
+
+function renderDashboard(){
+  const latest = safeGet('mhkm_latest', null);
+  const history = safeGet('mhkm_history', []);
+  if(!latest){
+    document.getElementById('dash-empty').style.display='block';
+    document.getElementById('dash-content').style.display='none';
+    return;
+  }
+  document.getElementById('dash-empty').style.display='none';
+  document.getElementById('dash-content').style.display='block';
+
+  const ink = getComputedStyle(document.body).getPropertyValue('--ink').trim();
+  const gridColor = getComputedStyle(document.body).getPropertyValue('--amber-line').trim();
+
+  document.getElementById('dash-score-block').innerHTML = `
+    <div style="font-size:48px;">${latest.level.emoji}</div>
+    <div class="serif" style="font-size:44px; font-weight:700; margin:6px 0 2px;">${latest.panicIndex}</div>
+    <div style="font-size:13px; color:var(--ink-soft);">${latest.level.name}</div>`;
+
+  if(radarChart) radarChart.destroy();
+  radarChart = new Chart(document.getElementById('chart-radar'), {
+    type:'radar',
+    data:{
+      labels:['Lo âu','FOMO','Chi tiêu bốc đồng'],
+      datasets:[{
+        label:'Bạn',
+        data:[latest.scores.anxiety, latest.scores.fomo, latest.scores.spend],
+        backgroundColor:'rgba(30,111,99,0.25)', borderColor:'#1E6F63', pointBackgroundColor:'#1E6F63', borderWidth:2
+      }]
+    },
+    options:{ responsive:true, plugins:{legend:{display:false}},
+      scales:{ r:{ min:0, max:100, ticks:{display:false}, grid:{color:gridColor}, angleLines:{color:gridColor}, pointLabels:{color:ink, font:{size:12,weight:600}} } } }
+  });
+
+  if(compareChart) compareChart.destroy();
+  compareChart = new Chart(document.getElementById('chart-compare'), {
+    type:'bar',
+    data:{
+      labels:['Lo âu','FOMO','Chi tiêu bốc đồng'],
+      datasets:[
+        {label:'Bạn', data:[latest.scores.anxiety, latest.scores.fomo, latest.scores.spend], backgroundColor:'#1E6F63', borderRadius:3},
+        {label:'Trung bình khảo sát', data:[SURVEY_AVG.anxiety, SURVEY_AVG.fomo, SURVEY_AVG.spend], backgroundColor:'#DE9A2E', borderRadius:3},
+      ]
+    },
+    options:{ indexAxis:'y', responsive:true,
+      plugins:{legend:{position:'bottom', labels:{color:ink}}},
+      scales:{ x:{min:0,max:100, ticks:{color:ink}, grid:{color:gridColor}}, y:{ticks:{color:ink}, grid:{display:false}} } }
+  });
+
+  if(historyChart) historyChart.destroy();
+  const labels = history.map((h,i)=> new Date(h.date).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'}) + (history.length>1?` (#${i+1})`:''));
+  historyChart = new Chart(document.getElementById('chart-history'), {
+    type:'line',
+    data:{ labels, datasets:[{ label:'Panic Index', data:history.map(h=>h.panicIndex),
+      borderColor:'#C94F3F', backgroundColor:'rgba(201,79,63,0.15)', fill:true, tension:.3, pointRadius:4 }] },
+    options:{ plugins:{legend:{display:false}}, scales:{ y:{min:0,max:100, ticks:{color:ink}, grid:{color:gridColor}}, x:{ticks:{color:ink}, grid:{display:false}} } }
+  });
+}
+
+/* ============================ TRACKER ============================ */
+const SUBJECTS = ['Toán','Ngữ Văn','Tiếng Anh','Vật Lý','Hóa Học','Sinh Học','Lịch Sử','Địa Lý','GDKT & PL'];
+function initTrackerForm(){
+  const sel = document.getElementById('t-subject');
+  sel.innerHTML = SUBJECTS.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
+function addTrackerItem(){
+  const name = document.getElementById('t-name').value.trim();
+  const subject = document.getElementById('t-subject').value;
+  const cost = parseInt(document.getElementById('t-cost').value) || 0;
+  if(!name){ document.getElementById('t-name').focus(); return; }
+  const items = safeGet('mhkm_tracker', []);
+  items.push({id:Date.now(), name, subject, cost, used:false});
+  safeSet('mhkm_tracker', items);
+  document.getElementById('t-name').value=''; document.getElementById('t-cost').value='';
+  renderTracker();
+}
+function toggleUsed(id){
+  const items = safeGet('mhkm_tracker', []);
+  const it = items.find(x=>x.id===id); if(it) it.used = !it.used;
+  safeSet('mhkm_tracker', items); renderTracker();
+}
+function removeTracked(id){
+  let items = safeGet('mhkm_tracker', []);
+  items = items.filter(x=>x.id!==id);
+  safeSet('mhkm_tracker', items); renderTracker();
+}
+function renderTracker(){
+  const items = safeGet('mhkm_tracker', []);
+  const tbody = document.getElementById('tracker-tbody');
+  document.getElementById('tracker-empty').style.display = items.length? 'none':'block';
+  tbody.innerHTML = items.map(it=>`
+    <tr>
+      <td>${it.name}</td>
+      <td>${it.subject}</td>
+      <td>${it.cost? it.cost.toLocaleString('vi-VN')+'đ' : '—'}</td>
+      <td><span class="badge" style="background:${it.used?'rgba(60,138,90,.18)':'rgba(217,166,46,.2)'}; color:${it.used?'var(--green)':'var(--yellow)'};">${it.used?'Đã dùng':'Chưa dùng'}</span></td>
+      <td style="text-align:right; white-space:nowrap;">
+        <button class="btn-ghost" style="padding:5px 10px; font-size:12px; margin-right:6px;" onclick="toggleUsed(${it.id})">${it.used?'Đánh dấu chưa dùng':'Đánh dấu đã dùng'}</button>
+        <button class="btn-ghost" style="padding:5px 10px; font-size:12px; border-color:var(--coral); color:var(--coral);" onclick="removeTracked(${it.id})">Xóa</button>
+      </td>
+    </tr>`).join('');
+
+  const total = items.length;
+  const used = items.filter(i=>i.used).length;
+  const totalCost = items.reduce((a,b)=>a+b.cost,0);
+  const unusedCost = items.filter(i=>!i.used).reduce((a,b)=>a+b.cost,0);
+  const rate = total? Math.round(used/total*100) : 0;
+  document.getElementById('tracker-stats').innerHTML = `
+    ${statCard('Tổng học liệu', total)}
+    ${statCard('Tỉ lệ đã sử dụng', rate+'%')}
+    ${statCard('Tổng chi', totalCost.toLocaleString('vi-VN')+'đ')}
+    ${statCard('Tiền "nằm chờ" (chưa dùng)', unusedCost.toLocaleString('vi-VN')+'đ')}
+  `;
+}
+function statCard(label, val){
+  return `<div class="card" style="padding:16px;">
+    <div class="serif" style="font-size:22px; font-weight:700;">${val}</div>
+    <div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">${label}</div>
+  </div>`;
+}
+
+/* ============================ PLANNER ============================ */
+const MATERIALS = {
+  'Toán': [{n:'SGK / SBT hiện hành', c:0},{n:'Sách bài tập trắc nghiệm theo cấu trúc đề thi mới', c:95000},{n:'Bộ đề thi thử 3–5 năm gần nhất (Bộ/Sở)', c:60000},{n:'Tài liệu tóm tắt công thức (tự làm hoặc miễn phí)', c:0}],
+  'Ngữ Văn': [{n:'SGK', c:0},{n:'Sổ tay tóm tắt luận điểm tác phẩm trọng tâm', c:45000},{n:'Tuyển tập đề nghị luận xã hội + văn học', c:65000}],
+  'Tiếng Anh': [{n:'SGK', c:0},{n:'Sách từ vựng theo chủ đề đề thi', c:85000},{n:'Bộ đề thi thử format mới nhất', c:60000}],
+  'Vật Lý': [{n:'SGK / SBT', c:0},{n:'Sách công thức + bài tập trắc nghiệm', c:90000},{n:'Bộ đề thi thử gần nhất', c:60000}],
+  'Hóa Học': [{n:'SGK / SBT', c:0},{n:'Sách bài tập trắc nghiệm theo chuyên đề', c:90000},{n:'Bộ đề thi thử gần nhất', c:60000}],
+  'Sinh Học': [{n:'SGK / SBT', c:0},{n:'Sách tổng hợp lý thuyết trọng tâm', c:80000},{n:'Bộ đề thi thử gần nhất', c:55000}],
+  'Lịch Sử': [{n:'SGK', c:0},{n:'Sổ tay tóm tắt mốc sự kiện', c:50000},{n:'Bộ đề thi thử gần nhất', c:55000}],
+  'Địa Lý': [{n:'SGK + Atlat Địa lý Việt Nam', c:100000},{n:'Bộ đề thi thử gần nhất', c:55000}],
+  'GDKT & PL': [{n:'SGK', c:0},{n:'Bộ đề thi thử gần nhất', c:50000}],
+};
+let selectedSubjects = new Set();
+function initPlannerChips(){
+  const wrap = document.getElementById('planner-subjects');
+  wrap.innerHTML = SUBJECTS.map(s=>`<span class="chip" data-s="${s}" onclick="toggleSubject('${s}')">${s}</span>`).join('');
+}
+function toggleSubject(s){
+  if(selectedSubjects.has(s)) selectedSubjects.delete(s); else selectedSubjects.add(s);
+  document.querySelectorAll('#planner-subjects .chip').forEach(c=> c.classList.toggle('selected', selectedSubjects.has(c.dataset.s)));
+}
+function generatePlan(){
+  const resEl = document.getElementById('plan-result');
+  if(selectedSubjects.size===0){
+    resEl.innerHTML = `<div class="card" style="padding:20px; border-color:var(--coral);"><b style="color:var(--coral);">Hãy chọn ít nhất một môn thi</b> trước khi tạo kế hoạch nhé.</div>`;
+    resEl.scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const weeks = parseInt(document.getElementById('p-weeks').value) || null;
+  const budget = parseInt(document.getElementById('p-budget').value) || null;
+
+  let totalCost = 0;
+  let subjectBlocks = '';
+  selectedSubjects.forEach(s=>{
+    const items = MATERIALS[s] || [];
+    const subTotal = items.reduce((a,b)=>a+b.c,0);
+    totalCost += subTotal;
+    subjectBlocks += `
+      <div class="card" style="padding:18px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <b class="serif" style="font-size:16px;">${s}</b>
+          <span style="font-size:13px; color:var(--ink-soft);">Ước tính: <b style="color:var(--ink);">${subTotal.toLocaleString('vi-VN')}đ</b></span>
+        </div>
+        <ul style="margin:0; padding-left:18px; font-size:13.5px; color:var(--ink-soft); line-height:1.9;">
+          ${items.map(i=>`<li>${i.n} ${i.c? `— <span style="color:var(--ink);">${i.c.toLocaleString('vi-VN')}đ</span>`:'<span style="color:var(--green);">— miễn phí / tận dụng sẵn có</span>'}</li>`).join('')}
+        </ul>
+      </div>`;
+  });
+
+  let budgetNote = '';
+  if(budget){
+    const diff = budget - totalCost;
+    if(diff >= 0){
+      budgetNote = `<div class="card" style="padding:16px; border-color:var(--green); background:rgba(60,138,90,.08);">
+        Ngân sách <b>${budget.toLocaleString('vi-VN')}đ</b> của bạn <b>đủ, thậm chí dư khoảng ${diff.toLocaleString('vi-VN')}đ</b> so với danh sách tối thiểu.
+        Phần dư này bạn có thể giữ lại thay vì mua thêm tài liệu "phòng hờ".</div>`;
+    } else {
+      budgetNote = `<div class="card" style="padding:16px; border-color:var(--coral); background:rgba(201,79,63,.08);">
+        Danh sách tối thiểu ước tính <b>${totalCost.toLocaleString('vi-VN')}đ</b>, cao hơn ngân sách bạn dự tính khoảng <b>${Math.abs(diff).toLocaleString('vi-VN')}đ</b>.
+        Hãy ưu tiên mua tài liệu cho môn bạn yếu nhất trước, và tận dụng SGK / tài liệu miễn phí cho các môn còn lại.</div>`;
+    }
+  }
+
+  resEl.innerHTML = `
+    <div class="card" style="padding:22px; margin-bottom:16px; background:var(--paper-raised);">
+      <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; align-items:center;">
+        <div>
+          <div style="font-size:12px; color:var(--ink-soft);">Kế hoạch cho ${selectedSubjects.size} môn ${weeks? `· ${weeks} tuần ôn tập` : ''}</div>
+          <div class="serif" style="font-size:26px; font-weight:700;">Tổng ước tính: ${totalCost.toLocaleString('vi-VN')}đ</div>
+        </div>
+      </div>
+    </div>
+    ${budgetNote}
+    <div style="height:6px;"></div>
+    ${subjectBlocks}
+    <div class="card" style="padding:20px; background:var(--paper);">
+      <b style="font-size:14px;">Trước khi bấm mua, học sinh khảo sát khuyên bạn nên:</b>
+      <ul style="margin:10px 0 0; padding-left:18px; font-size:13.5px; color:var(--ink-soft); line-height:1.9;">
+        <li>Tham khảo đánh giá đáng tin cậy trước khi mua</li>
+        <li>Theo dõi số tài liệu đã mua và mức độ sử dụng (dùng tab <b>Theo dõi học liệu</b>)</li>
+        <li>Trao đổi với phụ huynh hoặc bạn bè trước khi mua</li>
+        <li>Có kế hoạch ôn tập rõ ràng trước khi mua thêm bất cứ thứ gì</li>
+      </ul>
+    </div>`;
+  resEl.scrollIntoView({behavior:'smooth'});
+}
+
+/* ============================ LIBRARY ============================ */
+const ARTICLES = [
+  {
+    icon:'💸', title:'FOMO là gì và nó ảnh hưởng đến ví tiền bạn thế nào?',
+    body:`FOMO (Fear Of Missing Out — sợ bỏ lỡ) là cảm giác lo lắng rằng người khác đang có trải nghiệm hoặc lợi thế mà mình không có.
+    Trong mùa thi, FOMO thường xuất hiện khi bạn thấy bạn bè khoe đã mua bộ đề "hot", hoặc một trang mạng quảng cáo tài liệu "chỉ còn số lượng giới hạn".
+    Não bộ phản ứng với cảm giác này giống như một mối đe dọa thật sự, khiến bạn ra quyết định mua nhanh hơn và ít cân nhắc hơn bình thường.
+    Hệ quả là bạn có thể sở hữu nhiều tài liệu trùng lặp, tốn tiền cho thứ không thực sự cần, trong khi thời gian ôn tập thì có hạn.
+    Cách đơn giản để giảm FOMO: trước khi mua, tự hỏi "mình đang thiếu kiến thức gì cụ thể?" thay vì "mọi người đang mua gì?".`
+  },
+  {
+    icon:'⏳', title:'Sunk cost fallacy trong học tập',
+    body:`Sunk cost fallacy (ngụy biện chi phí chìm) là xu hướng tiếp tục đầu tư thời gian hoặc tiền bạc vào một việc chỉ vì đã bỏ ra chi phí trước đó,
+    dù việc tiếp tục không còn hợp lý. Trong việc mua học liệu, ngụy biện này thể hiện qua suy nghĩ: "Mình đã mua bộ sách này rồi, dù không hợp cũng phải cố học hết",
+    hoặc "Đã tốn tiền mua khóa học rồi thì phải mua thêm tài liệu đi kèm cho xứng đáng".
+    Vấn đề là khoản tiền đã chi không thể lấy lại, nên nó không nên là lý do để tiếp tục chi thêm. Quyết định nên dựa trên việc: tài liệu này có thực sự giúp ích cho việc ôn thi từ bây giờ trở đi hay không.
+    Nếu một cuốn sách không phù hợp, dừng lại và chuyển hướng thường tiết kiệm hơn là cố "gỡ vốn" bằng cách mua thêm.`
+  },
+  {
+    icon:'🚩', title:'5 dấu hiệu bạn đang mua tài liệu vì lo sợ, không phải vì cần',
+    body:`1. Bạn mua ngay khi thấy quảng cáo, không so sánh với tài liệu đã có ở nhà.
+    2. Bạn mua vì "thấy bạn bè ai cũng có", chứ không xuất phát từ điểm yếu môn học của bản thân.
+    3. Sau khi mua, bạn cảm thấy nhẹ nhõm tạm thời rồi lại tiếp tục lo lắng như cũ.
+    4. Bạn có từ hai tài liệu trở lên cho cùng một nội dung nhưng chưa dùng hết cuốn nào.
+    5. Bạn khó trả lời câu hỏi "cuốn này giúp mình cải thiện phần kiến thức cụ thể nào?" một cách rõ ràng.
+    Nếu bạn nhận ra 2–3 dấu hiệu trên ở chính mình, hãy thử dùng công cụ Lập kế hoạch học liệu trong app này trước khi mua lần tiếp theo.`
+  }
+];
+function initLibrary(){
+  const wrap = document.getElementById('library-list');
+  wrap.innerHTML = ARTICLES.map((a,i)=>`
+    <div class="card">
+      <div class="accordion-head" style="padding:18px 20px;" onclick="toggleArticle(${i})">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:20px;">${a.icon}</span>
+          <b class="serif" style="font-size:16px; font-weight:600;">${a.title}</b>
+        </div>
+        <span id="chev-${i}" style="font-size:14px; color:var(--ink-soft); transition:transform .2s;">▾</span>
+      </div>
+      <div class="accordion-body" id="body-${i}">
+        <p style="padding:0 20px 20px; font-size:14px; line-height:1.75; color:var(--ink-soft); white-space:pre-line;">${a.body}</p>
+      </div>
+    </div>`).join('');
+}
+function toggleArticle(i){
+  const body = document.getElementById('body-'+i);
+  const chev = document.getElementById('chev-'+i);
+  const open = body.classList.toggle('open');
+  chev.style.transform = open ? 'rotate(180deg)' : 'rotate(0)';
+}
+
+/* ============================ COMMUNITY CHARTS ============================ */
+function renderCommunityCharts(){
+  const ink = getComputedStyle(document.body).getPropertyValue('--ink').trim();
+  const gridColor = getComputedStyle(document.body).getPropertyValue('--amber-line').trim();
+
+  new Chart(document.getElementById('chart-willing'), {
+    type:'bar',
+    data:{ labels:['Rất muốn\nsử dụng','Có thể\nsử dụng','Phân vân','Có lẽ không\nsử dụng','Chắc chắn\nkhông sử dụng'],
+      datasets:[{ data:[91,91,43,18,7], backgroundColor:['#1E6F63','#3C8A5A','#DE9A2E','#D9834F','#C94F3F'], borderRadius:4 }] },
+    options:{ plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.raw} HS (${(c.raw/250*100).toFixed(1)}%)`}}},
+      scales:{ x:{ticks:{color:ink, font:{size:11}}, grid:{display:false}}, y:{ticks:{color:ink}, grid:{color:gridColor}} } }
+  });
+
+  new Chart(document.getElementById('chart-features'), {
+    type:'bar',
+    data:{ labels:['Theo dõi tài liệu đã mua/dùng','Lập ngân sách học liệu','Nội dung ngắn về FOMO, áp lực thi','Nhắc nhở suy nghĩ trước khi mua','Danh sách học liệu tối thiểu','Gợi ý tận dụng tài liệu sẵn có'],
+      datasets:[{ data:[105,99,99,97,96,93], backgroundColor:'#1E6F63', borderRadius:4 }] },
+    options:{ indexAxis:'y', plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{color:ink}, grid:{color:gridColor}}, y:{ticks:{color:ink, font:{size:11}}, grid:{display:false}} } }
+  });
+
+  new Chart(document.getElementById('chart-solutions'), {
+    type:'bar',
+    data:{ labels:['Tham khảo đánh giá đáng tin cậy','Theo dõi tài liệu & mức dùng','Danh sách học liệu tối thiểu','Trao đổi với phụ huynh/bạn bè','Có kế hoạch ôn tập rõ ràng'],
+      datasets:[{ data:[81,77,75,72,71], backgroundColor:'#DE9A2E', borderRadius:4 }] },
+    options:{ indexAxis:'y', plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{color:ink}, grid:{color:gridColor}}, y:{ticks:{color:ink, font:{size:11}}, grid:{display:false}} } }
+  });
+}
+
+/* ============================ VIDEOS ============================ */
+// Thông tin kênh được tổng hợp từ báo chí / trang giới thiệu công khai (search 2026).
+// searchUrl dùng cho kênh chưa xác minh được handle chính xác — dẫn tới kết quả tìm kiếm YouTube thay vì đoán link.
+const VIDEO_CHANNELS = [
+  { subject:'Toán', name:'Thầy Hồ Thức Thuận', tag:'Toán',
+    desc:'Thủ khoa ĐH Kinh tế Quốc dân (27,5 điểm, Toán 9,5/10). Phong cách dạy trẻ trung, bám sát cấu trúc đề thi THPT hiện hành.',
+    url:'https://www.youtube.com/results?search_query=th%E1%BA%A7y+h%E1%BB%93+th%E1%BB%A9c+thu%E1%BA%ADn+to%C3%A1n' },
+  { subject:'Vật Lý', name:'Thầy Vũ Ngọc Anh — Chuyên luyện thi Vật Lý', tag:'Lý',
+    desc:'Giáo viên trẻ được nhiều báo (Kênh 14, VOV, Dân trí...) nhắc đến; kênh cập nhật bài chữa đề thường xuyên theo sát đề minh họa hằng năm.',
+    url:'https://www.youtube.com/@thayvnachuyenluyenthivatly' },
+  { subject:'Hóa Học', name:'Thầy Phan Quốc Khánh', tag:'Hóa',
+    desc:'Giáo viên chuyên luyện thi Hóa tại Cần Thơ. Kênh tập trung bổ trợ lý thuyết, phương pháp giải bài tập và kỹ năng làm bài thi.',
+    url:'https://www.youtube.com/c/thayphanquockhanh' },
+  { subject:'Sinh Học', name:'Thầy Phan Khắc Nghệ', tag:'Sinh',
+    desc:'Tiến sĩ Sinh học, gần 30 năm luyện thi đại học, có nhiều học sinh đạt thủ khoa/á khoa khối B qua các năm.',
+    url:'https://www.youtube.com/@thayphankhacnghe' },
+  { subject:'Ngữ Văn', name:'Thầy Phạm Minh Nhật (Anh Tũn dạy Văn)', tag:'Văn',
+    desc:'Giáo viên dạy Văn được biết đến rộng rãi tại Hà Nội, phong cách truyền cảm hứng, hệ thống hóa luận điểm dễ nhớ.',
+    url:'https://www.youtube.com/@PhamMinhNhatOfficial' },
+  { subject:'Đa môn (Toán, Văn, Anh, Lý, Hóa, Sinh...)', name:'HOCMAI THPT', tag:'Đa môn',
+    desc:'Kênh chính thức của Hệ thống Giáo dục HOCMAI, hơn 330.000 người đăng ký, có bài giảng miễn phí cho học sinh THPT ở hầu hết các môn.',
+    url:'https://www.youtube.com/results?search_query=HOCMAI+THPT' },
+  { subject:'Đa môn — tư vấn ôn thi & thi thử', name:'Tuyensinh247', tag:'Đa môn',
+    desc:'Kênh cung cấp video tư vấn tuyển sinh, bí quyết ôn thi và chữa đề từ đội ngũ giáo viên nhiều kinh nghiệm.',
+    url:'https://www.youtube.com/results?search_query=Tuyensinh247' },
+  { subject:'Tiếng Anh', name:'Kênh luyện đề & ngữ pháp thi tốt nghiệp THPT', tag:'Anh',
+    desc:'Gợi ý tìm theo từ khóa để chọn kênh hợp giọng nói và tốc độ giảng bạn dễ tiếp thu nhất — vì Tiếng Anh có nhiều kênh chất lượng tương đương nhau.',
+    url:'https://www.youtube.com/results?search_query=luy%E1%BB%87n+thi+ti%E1%BA%BFng+anh+THPT+Qu%E1%BB%91c+gia' },
+  { subject:'Lịch Sử / Địa Lý / GDKT & PL', name:'Kênh ôn tập môn xã hội theo chuyên đề', tag:'Xã hội',
+    desc:'Các môn xã hội hiện chưa có một kênh "gương mặt đại diện" rõ rệt như khối tự nhiên — nên tham khảo playlist theo chuyên đề trên HOCMAI/Tuyensinh247 ở trên trước.',
+    url:'https://www.youtube.com/results?search_query=%C3%B4n+thi+THPT+L%E1%BB%8Bch+S%E1%BB%AD+%C4%90%E1%BB%8Ba+L%C3%BD+GDCD' },
+];
+function initVideoFilters(){
+  const subjects = ['Tất cả', ...new Set(VIDEO_CHANNELS.map(v=>v.tag))];
+  document.getElementById('video-filters').innerHTML = subjects.map((s,i)=>
+    `<span class="chip ${i===0?'selected':''}" data-vf="${s}" onclick="filterVideos('${s}')">${s}</span>`).join('');
+}
+function filterVideos(tag){
+  document.querySelectorAll('#video-filters .chip').forEach(c=>c.classList.toggle('selected', c.dataset.vf===tag));
+  const list = tag==='Tất cả' ? VIDEO_CHANNELS : VIDEO_CHANNELS.filter(v=>v.tag===tag);
+  document.getElementById('videos-list').innerHTML = list.map(v=>`
+    <div class="card video-card">
+      <div class="video-thumb">▶</div>
+      <div style="flex:1;">
+        <span class="tag coral">${v.tag}</span>
+        <b class="serif" style="font-size:15.5px;">${v.name}</b>
+        <div style="font-size:12.5px; color:var(--ink-soft); margin:6px 0 8px; line-height:1.6;">${v.desc}</div>
+        <a class="src-link" href="${v.url}" target="_blank" rel="noopener">Mở kênh trên YouTube →</a>
+      </div>
+    </div>`).join('');
+}
+function renderVideos(){
+  initVideoFilters();
+  filterVideos('Tất cả');
+}
+
+/* ============================ MATERIALS DATABASE ============================ */
+// Thông tin tổng hợp từ các trang giới thiệu/blog sách công khai (Fahasa, Tiki, tkbooks — 2026), diễn đạt lại, không sao chép nguyên văn.
+const MATERIALS_DB = [
+  { name:'Tổng Ôn Toán Học – Tập 1 & 2 (theo chương trình SGK mới)', subject:'Toán', exam:'THPT',
+    info:'Hệ thống lại toàn bộ kiến thức Toán 12 theo chương trình mới, đi kèm bài tập rèn kỹ năng làm bài thi trắc nghiệm.',
+    note:'Được giới thiệu là phù hợp cho học sinh muốn ôn tập toàn diện theo đúng cấu trúc SGK hiện hành, thay vì luyện đề chuyên sâu ngay từ đầu.',
+    source:'https://www.fahasa.com/blog/tong-hop-sach-luyen-thi-thpt-quoc-gia-mon-toan-nam-2026/' },
+  { name:'60 Đề Minh Họa Tốt Nghiệp THPT 2026 – Môn Toán', subject:'Toán', exam:'THPT',
+    info:'Bộ 60 đề luyện tập bám sát định dạng đề minh họa mới nhất của Bộ GD&ĐT.',
+    note:'Định vị là sách luyện đề (không phải sách học lý thuyết), phù hợp giai đoạn luyện tốc độ và làm quen áp lực phòng thi.',
+    source:'https://www.fahasa.com/blog/tong-hop-sach-luyen-thi-thpt-quoc-gia-mon-toan-nam-2026/' },
+  { name:'Đánh Giá Năng Lực Môn Toán — Bài thi tự luận kết hợp trắc nghiệm', subject:'Toán', exam:'ĐGNL',
+    info:'Tài liệu ôn dành riêng cho phần Toán trong kỳ thi ĐGNL, câu hỏi thiết kế theo hướng "bẫy tư duy" và vận dụng cao.',
+    note:'Được mô tả là phù hợp với học sinh đã nắm chắc kiến thức THPT và muốn luyện thêm dạng bài tự luận-trắc nghiệm kết hợp đặc trưng của ĐGNL.',
+    source:'https://www.fahasa.com/blog/tong-hop-sach-luyen-thi-thpt-quoc-gia-mon-toan-nam-2026/' },
+  { name:'Tăng Tốc Luyện Đề Thi Đánh Giá Năng Lực (theo cấu trúc ĐHQG TP.HCM)', subject:'Nhiều môn (ĐGNL)', exam:'ĐGNL',
+    info:'10 đề luyện thực chiến bám sát cấu trúc đề chính thức ĐHQG TP.HCM, mỗi đề có lời giải chi tiết. Bản tái bản 2025 cập nhật theo cấu trúc đề 2026.',
+    note:'Nội dung được nhấn mạnh là giúp làm quen áp lực thời gian và độ khó thực tế của kỳ thi, không phải tài liệu học lý thuyết từ đầu.',
+    source:'https://www.fahasa.com/blog/review-sach-tang-toc-luyen-de-thi-danh-gia-nang-luc-theo-cau-truc-de-thi-cua-dai-hoc-quoc-gia-tp-ho-chi-minh/' },
+  { name:'35 Đề Thi Thử Tốt Nghiệp THPT Môn Tiếng Anh', subject:'Tiếng Anh', exam:'THPT',
+    info:'35 đề thi thử đầy đủ theo format đề thi mới (tăng dạng đọc điền từ, đọc hiểu, sắp xếp câu từ 10/2024), có đáp án và giải thích chi tiết từng câu.',
+    note:'Nhà xuất bản/nhóm biên soạn công bố độ tương đồng khoảng 90% so với đề thi chính thức — đây là thông tin do đơn vị phát hành cung cấp, học sinh nên đối chiếu thêm với đề minh họa chính thức của Bộ.',
+    source:'https://tkbooks.vn/sach-on-thi-thpt-quoc-gia-mon-tieng-anh-nam-hoc-2025-2026/' },
+  { name:'Ôn Luyện Trắc Nghiệm Thi Tốt Nghiệp THPT Môn Tin Học (NXB Đại học Sư phạm)', subject:'Tin Học', exam:'THPT',
+    info:'Do đội ngũ tham gia xây dựng chương trình GDPT 2018 biên soạn. Bài tập phân bậc từ Nhận biết đến Vận dụng cao, kèm tài khoản luyện đề trực tuyến.',
+    note:'Được giới thiệu là dùng được cho mọi bộ SGK (Kết nối tri thức, Cánh diều, Chân trời sáng tạo) vì tập trung vào tư duy trắc nghiệm chứ không bám 1 bộ sách cụ thể.',
+    source:'https://tkbooks.vn/sach-on-thi-thpt-quoc-gia-mon-tin-hoc-nam-2025-2026/' },
+  { name:'Mega Luyện Đề THPT Quốc Gia — Vật Lí (Megabook)', subject:'Vật Lý', exam:'THPT',
+    info:'Bộ đề luyện tập được cập nhật theo xu hướng ra đề thi mới nhất.',
+    note:'Các trang giới thiệu sách khuyên nên bắt đầu luyện đề ở giai đoạn 3–4 tháng cuối, sau khi đã nắm vững kiến thức nền — không phải tài liệu học lý thuyết từ đầu.',
+    source:'https://tiki.vn/blog/sach-luyen-thi-dai-hoc-mon-vat-ly/' },
+  { name:'Công Phá Vật Lý — Tập 1', subject:'Vật Lý', exam:'THPT',
+    info:'Sách xây dựng lộ trình từ cơ bản, ngôn ngữ dễ hiểu, nhiều ví dụ minh họa.',
+    note:'Được các trang giới thiệu định vị dành cho học sinh mất gốc hoặc cần củng cố nền tảng trước khi luyện đề tốc độ.',
+    source:'https://tiki.vn/blog/sach-luyen-thi-dai-hoc-mon-vat-ly/' },
+  { name:'Hướng Dẫn Giải Nhanh Bài Tập Trắc Nghiệm Trọng Tâm Hóa Học 12 — PGS.TS. Cao Cự Giác', subject:'Hóa Học', exam:'THPT',
+    info:'Hệ thống hóa lý thuyết Hóa 10–11–12 theo từng chuyên đề, trình bày ngắn gọn kèm ví dụ minh họa.',
+    note:'Tác giả là giảng viên có nhiều đầu sách luyện thi Hóa học được biết đến lâu năm; nội dung thiên về hệ thống lý thuyết hơn là luyện đề thực chiến.',
+    source:'https://tiki.vn/blog/sach-hoa-luyen-thi-dai-hoc/' },
+  { name:'Mega Luyện Đề THPT Quốc Gia 2025 — Hóa Học', subject:'Hóa Học', exam:'THPT',
+    info:'Bộ đề luyện thi bám sát cấu trúc đề thi THPT Quốc gia môn Hóa.',
+    note:'Phù hợp giai đoạn luyện đề sau khi đã ôn xong lý thuyết theo chuyên đề.',
+    source:'https://tiki.vn/blog/sach-hoa-luyen-thi-dai-hoc/' },
+  { name:'Đột Phá Tư Duy Kỳ Thi Tốt Nghiệp THPT', subject:'Nhiều môn (khối B)', exam:'THPT',
+    info:'Bộ sách hướng đến phát triển tư duy logic, kỹ năng phân tích và giải quyết vấn đề cho khối B; có nền tảng thi thử trực tuyến đi kèm (megalive.vn) để học sinh tự đánh giá năng lực.',
+    note:'Đơn vị phát hành mô tả đây là tài liệu hỗ trợ ôn tập tổng hợp, không phải sách luyện chuyên sâu 1 môn.',
+    source:'https://www.fahasa.com/blog/tong-hop-sach-on-thi-thpt-quoc-gia-thptqg-danh-cho-hoc-sinh-khoi-b/' },
+];
+function initMaterialFilters(){
+  const subjects = ['', ...new Set(MATERIALS_DB.map(m=>m.subject))];
+  document.getElementById('mat-filter-subject').innerHTML = subjects.map(s=>
+    `<option value="${s}">${s || 'Tất cả môn'}</option>`).join('');
+}
+function debounce(fn, ms){
+  let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); };
+}
+function renderMaterialCards(list){
+  const wrap = document.getElementById('materials-list');
+  document.getElementById('materials-empty').style.display = list.length ? 'none' : 'block';
+  wrap.innerHTML = list.map(m=>`
+    <div class="card" style="padding:18px 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+        <b class="serif" style="font-size:15.5px; line-height:1.35; max-width:600px;">${m.name}</b>
+        <div style="white-space:nowrap;">
+          <span class="tag">${m.subject}</span>
+          <span class="tag ${m.exam==='ĐGNL'?'mustard':'coral'}">${m.exam}</span>
+        </div>
+      </div>
+      <p style="font-size:13px; color:var(--ink-soft); margin:10px 0 6px; line-height:1.6;"><b style="color:var(--ink);">Nội dung:</b> ${m.info}</p>
+      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 10px; line-height:1.6;"><b style="color:var(--ink);">Nhận xét chung:</b> ${m.note}</p>
+      <a class="src-link" href="${m.source}" target="_blank" rel="noopener">Nguồn tham khảo →</a>
+    </div>`).join('');
+}
+function applyMaterialFilters(){
+  const q = document.getElementById('mat-search').value.trim().toLowerCase();
+  const exam = document.getElementById('mat-filter-exam').value;
+  const subject = document.getElementById('mat-filter-subject').value;
+  const filtered = MATERIALS_DB.filter(m=>{
+    const matchQ = !q || (m.name+m.subject).toLowerCase().includes(q);
+    const matchExam = !exam || m.exam===exam;
+    const matchSubject = !subject || m.subject===subject;
+    return matchQ && matchExam && matchSubject;
+  });
+  renderMaterialCards(filtered);
+}
+function renderMaterials(){
+  initMaterialFilters();
+  renderMaterialCards(MATERIALS_DB);
+  document.getElementById('mat-search').addEventListener('input', debounce(applyMaterialFilters, 250));
+  document.getElementById('mat-filter-exam').addEventListener('change', applyMaterialFilters);
+  document.getElementById('mat-filter-subject').addEventListener('change', applyMaterialFilters);
+}
+
+/* ============================ INIT ============================ */
+initTrackerForm();
+renderTracker();
+initPlannerChips();
+initLibrary();
+</script>
+</body>
+</html>
